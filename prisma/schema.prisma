@@ -1,0 +1,50 @@
+// =========================================================================
+// CATATAN MERGE (untuk PM):
+// Model "User" di bawah ini adalah BLACK BOX milik Programmer 1
+// (Authentication & Authorization). Field lengkapnya (name, email, password,
+// dst) ada di branch Programmer 1. Programmer 2 HANYA menambahkan relasi
+// `transactions Transaction[]` ke model User tsb.
+//
+// Saat merge: gabungkan field User dari Programmer 1 dengan tambahan relasi
+// di bawah, lalu jalankan `npx prisma migrate dev`.
+// =========================================================================
+
+datasource db {
+  provider = "postgresql"
+
+}
+
+generator client {
+  provider = "prisma-client"
+}
+
+// --- BLACK BOX (Programmer 1) — hanya contoh minimal + tambahan relasi ---
+model User {
+  id           String        @id @default(uuid())
+  // ...field lain (name, email, password, dll) milik Programmer 1
+  transactions Transaction[] // <-- ditambahkan Programmer 2 (SRS-12)
+}
+
+// --- MILIK PROGRAMMER 2 (Transaction Management) ---
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+model Transaction {
+  id          String          @id @default(uuid())
+  type        TransactionType
+  amount      Decimal         @db.Decimal(14, 2)
+  category    String?
+  description String?
+  date        DateTime        @default(now())
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, type])
+}
+
