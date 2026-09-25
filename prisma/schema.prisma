@@ -1,50 +1,35 @@
-// =========================================================================
-// CATATAN MERGE (untuk PM):
-// Model "User" di bawah ini adalah BLACK BOX milik Programmer 1
-// (Authentication & Authorization). Field lengkapnya (name, email, password,
-// dst) ada di branch Programmer 1. Programmer 2 HANYA menambahkan relasi
-// `transactions Transaction[]` ke model User tsb.
-//
-// Saat merge: gabungkan field User dari Programmer 1 dengan tambahan relasi
-// di bawah, lalu jalankan `npx prisma migrate dev`.
-// =========================================================================
-
 datasource db {
   provider = "postgresql"
-
 }
 
 generator client {
   provider = "prisma-client"
+  output   = "../generated/prisma"
 }
 
-// --- BLACK BOX (Programmer 1) — hanya contoh minimal + tambahan relasi ---
 model User {
-  id           String        @id @default(uuid())
-  // ...field lain (name, email, password, dll) milik Programmer 1
-  transactions Transaction[] // <-- ditambahkan Programmer 2 (SRS-12)
-}
+  id           String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name         String        @db.VarChar(255)
+  email        String        @unique @db.VarChar(255)
+  passwordHash String        @map("password_hash")
+  createdAt    DateTime      @default(now()) @db.Timestamptz(6) @map("created_at")
+  transactions Transaction[]
 
-// --- MILIK PROGRAMMER 2 (Transaction Management) ---
-enum TransactionType {
-  INCOME
-  EXPENSE
+  @@map("users")
 }
 
 model Transaction {
-  id          String          @id @default(uuid())
-  type        TransactionType
-  amount      Decimal         @db.Decimal(14, 2)
-  category    String?
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  type        String   @db.VarChar(20)
+  amount      Decimal  @db.Decimal(14, 2)
+  category    String?  @db.VarChar(100)
   description String?
-  date        DateTime        @default(now())
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  date        DateTime @default(dbgenerated("CURRENT_DATE")) @map("transaction_date") @db.Date
+  createdAt   DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
 
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@index([userId])
-  @@index([userId, type])
+  @@index([userId], map: "idx_transactions_user_id")
+  @@map("transactions")
 }
-
