@@ -1,8 +1,7 @@
 import { redirect } from "next/navigation";
+import { getCurrentUser } from "@/lib/auth";
 
-// Redirect root "/" ke "/dashboard"
-// Nanti setelah Programmer 1 selesai, ini bisa diubah
-// untuk redirect ke "/login" jika belum login
-export default function Home() {
-  redirect("/dashboard");
+export default async function Home() {
+  const user = await getCurrentUser();
+  redirect(user ? "/dashboard" : "/login");
 }
