@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 // ============================================
 // RecentTable — SRS-16, SRS-26
@@ -6,7 +6,7 @@
 // fungsional via AJAX fetch /api/transactions
 // ============================================
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { ArrowUp, ArrowDown, Receipt, CalendarBlank, X } from "@phosphor-icons/react";
 import type { Transaction } from "@/app/lib/mock-data";
@@ -19,13 +19,39 @@ interface RecentTableProps {
   onRefetch?: () => void;  // SRS-31: trigger dashboard refresh
 }
 
+// Bentuk data dari GET /api/transactions (Prisma): amount berupa Decimal sehingga
+// terkirim sebagai string, date berupa ISO penuh, dan field memakai camelCase.
+interface ApiTransaction {
+  id: string;
+  userId: string;
+  type: "income" | "expense";
+  amount: number | string;
+  category: string | null;
+  description: string | null;
+  date: string;
+  createdAt: string;
+}
+
+function normalize(t: ApiTransaction): Transaction {
+  return {
+    id: t.id,
+    user_id: t.userId,
+    type: t.type,
+    amount: Number(t.amount),
+    category: t.category ?? "",
+    description: t.description ?? "",
+    transaction_date: String(t.date).slice(0, 10),
+    created_at: t.createdAt,
+  };
+}
+
 const containerVar = {
   hidden: {},
   show: { transition: { staggerChildren: 0.04, delayChildren: 0.2 } },
 };
 const rowVar = {
   hidden: { opacity: 0, x: -8 },
-  show: { opacity: 1, x: 0, transition: { duration: 0.28, ease: [0.16, 1, 0.3, 1] } },
+  show: { opacity: 1, x: 0, transition: { duration: 0.28, ease: [0.16, 1, 0.3, 1] as const} },
 };
 
 export default function RecentTable({
@@ -36,23 +62,37 @@ export default function RecentTable({
 }: RecentTableProps) {
   const [allTxns, setAllTxns] = useState<Transaction[] | null>(null);
   const [loadingAll, setLoadingAll] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
+  // Data dashboard berubah (ada transaksi baru atau dihapus): buang cache modal
+  // supaya "Lihat semua" berikutnya mengambil data terbaru.
+  useEffect(() => {
+    setAllTxns(null);
+  }, [totalTransactions]);
+
   // SRS-26: Fetch semua transaksi via AJAX saat "Lihat semua" diklik
-  async function handleLihatSemua() {
-    setShowModal(true);
-    if (allTxns !== null) return; // sudah ter-cache
+  async function loadAll() {
     setLoadingAll(true);
+    setLoadError(false);
     try {
-      const res = await fetch("/api/transactions?limit=100", { cache: "no-store" });
+      const res = await fetch("/api/transactions?page=1&limit=100", {
+        cache: "no-store",
+        credentials: "same-origin",
+      });
       if (!res.ok) throw new Error();
-      const json = await res.json() as { transactions: Transaction[] };
-      setAllTxns(json.transactions);
+      const json = await res.json() as { data: ApiTransaction[] };
+      setAllTxns(json.data.map(normalize));
     } catch {
-      setAllTxns([]);
+      setLoadError(true);
     } finally {
       setLoadingAll(false);
     }
+  }
+
+  function handleLihatSemua() {
+    setShowModal(true);
+    if (allTxns === null) loadAll(); // belum ada cache, ambil dari server
   }
 
   const displayedTxns = transactions.slice(0, limit);
@@ -63,7 +103,7 @@ export default function RecentTable({
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.45, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
+        transition={{ duration: 0.45, delay: 0.25, ease: [0.16, 1, 0.3, 1] as const}}
       >
         {/* Section header */}
         <div className="mb-4 flex items-center justify-between">
@@ -203,7 +243,7 @@ export default function RecentTable({
           <motion.div
             initial={{ opacity: 0, scale: 0.96, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] as const}}
             className="w-full max-w-3xl max-h-[80vh] overflow-hidden rounded-[32px] flex flex-col"
             style={{ background: "var(--card-bg)", border: "2px solid var(--card-border)" }}
           >
@@ -226,6 +266,20 @@ export default function RecentTable({
                 <div className="flex items-center justify-center py-12">
                   <div className="h-8 w-8 rounded-full border-2 animate-spin"
                     style={{ borderColor: "var(--card-border)", borderTopColor: "var(--accent)" }} />
+                </div>
+              ) : loadError ? (
+                <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
+                  <p className="text-body" style={{ color: "var(--expense-color)" }}>
+                    Transaksi gagal dimuat. Periksa koneksi lalu coba lagi.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={loadAll}
+                    className="rounded-full px-4 py-1.5 text-caption font-semibold cursor-pointer"
+                    style={{ background: "var(--accent)", border: "1.5px solid var(--card-border)", color: "var(--background)" }}
+                  >
+                    Coba lagi
+                  </button>
                 </div>
               ) : (
                 <table className="w-full border-collapse">

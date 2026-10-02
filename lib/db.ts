@@ -1,12 +1,8 @@
 import { Pool } from "pg";
 
-// Strip ?sslmode=... from the URL so it doesn't override the ssl object below.
-// Aiven uses a self-signed cert chain, so we must set rejectUnauthorized: false
-// explicitly via the ssl option (URL-level sslmode=require would override this).
-const connectionString = (process.env.DATABASE_URL ?? "").replace(
-    /[?&]sslmode=[^&]*/,
-    ""
-);
+let connectionString = process.env.DATABASE_URL?? "";
+// Ambil base URL aja tanpa?query, karena ssl kita set manual di bawah
+connectionString = connectionString.split("?")[0];
 
 const pool = new Pool({
     connectionString,

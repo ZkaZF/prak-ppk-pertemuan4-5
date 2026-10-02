@@ -1,71 +1,126 @@
-﻿// ============================================
-// GET /api/transactions — SRS-26 (Lihat Semua)
-// Paginated list semua transaksi user
-// Query params: ?page=1&limit=20&month=2026-10
-// ============================================
-
 import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
-import pool from "@/lib/db";
+import { prisma } from "@/lib/prisma";
+import { getSessionUser } from "@/lib/session";
+import { TransactionInput } from "@/types/transaction";
 
+/**
+ * GET /api/transactions
+ * GET /api/transactions?type=income | expense
+ * GET /api/transactions?month=2026-10
+ * GET /api/transactions?page=1&limit=20
+ *
+ * SRS-08 Transaction History : Pengguna dapat melihat riwayat transaksi keuangannya.
+ * SRS-11 Transaction Filter  : Pengguna dapat memfilter transaksi berdasarkan jenis.
+ * SRS-12 User-Transaction    : hanya mengembalikan transaksi milik user yang login.
+ * SRS-26 Dashboard AJAX      : "Lihat semua" memakai pagination dan filter bulan.
+ *
+ * Pagination bersifat opsional. Jika "page" dan "limit" tidak dikirim,
+ * semua transaksi yang cocok dengan filter dikembalikan.
+ */
 export async function GET(req: NextRequest) {
-  const user = await getCurrentUser();
+  const user = await getSessionUser(req);
   if (!user) {
-    return NextResponse.json({ error: "Belum login." }, { status: 401 });
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
   const { searchParams } = new URL(req.url);
-  const page = Math.max(1, Number(searchParams.get("page") ?? 1));
-  const limit = Math.min(100, Math.max(1, Number(searchParams.get("limit") ?? 20)));
-  const offset = (page - 1) * limit;
+  const type = searchParams.get("type");
   const monthParam = searchParams.get("month");
+  const pageParam = searchParams.get("page");
+  const limitParam = searchParams.get("limit");
 
-  // Build filter kondisi
-  const conditions: string[] = ["user_id = $1"];
-  const params: (string | number)[] = [user.id];
+  if (type && type !== "income" && type !== "expense") {
+    return NextResponse.json(
+      { message: "Parameter 'type' harus income atau expense" },
+      { status: 400 }
+    );
+  }
 
-  if (monthParam && /^\d{4}-\d{2}$/.test(monthParam)) {
+  if (monthParam && !/^\d{4}-(0[1-9]|1[0-2])$/.test(monthParam)) {
+    return NextResponse.json(
+      { message: "Parameter 'month' harus berformat YYYY-MM" },
+      { status: 400 }
+    );
+  }
+
+  // Filter bulan: dari tanggal 1 bulan terpilih sampai sebelum tanggal 1 bulan berikutnya
+  let dateFilter = {};
+  if (monthParam) {
     const [year, month] = monthParam.split("-").map(Number);
-    const dateStart = `${year}-${String(month).padStart(2, "0")}-01`;
-    const lastDay = new Date(year, month, 0).getDate();
-    const dateEnd = `${year}-${String(month).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
-    conditions.push(`transaction_date BETWEEN $${params.length + 1} AND $${params.length + 2}`);
-    params.push(dateStart, dateEnd);
+    dateFilter = {
+      date: {
+        gte: new Date(Date.UTC(year, month - 1, 1)),
+        lt: new Date(Date.UTC(year, month, 1)),
+      },
+    };
   }
 
-  const where = conditions.join(" AND ");
+  const where = {
+    userId: user.id, // SRS-12: relasi user-transaksi
+    ...(type ? { type } : {}),
+    ...dateFilter,
+  };
 
-  try {
-    const [dataResult, countResult] = await Promise.all([
-      pool.query(
-        `SELECT id, user_id, type,
-                CAST(amount AS FLOAT) AS amount,
-                COALESCE(category, '') AS category,
-                COALESCE(description, '') AS description,
-                TO_CHAR(transaction_date, 'YYYY-MM-DD') AS transaction_date,
-                created_at
-         FROM transactions
-         WHERE ${where}
-         ORDER BY transaction_date DESC, created_at DESC
-         LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
-        [...params, limit, offset]
-      ),
-      pool.query(
-        `SELECT COUNT(*)::int AS total FROM transactions WHERE ${where}`,
-        params
-      ),
-    ]);
+  const paginated = pageParam !== null || limitParam !== null;
+  const page = Math.max(1, Number(pageParam ?? 1) || 1);
+  const limit = Math.min(100, Math.max(1, Number(limitParam ?? 20) || 20));
 
-    const total = countResult.rows[0].total;
-    return NextResponse.json({
-      transactions: dataResult.rows,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    });
-  } catch (err) {
-    console.error("[api/transactions] Error:", err);
-    return NextResponse.json({ error: "Gagal mengambil transaksi." }, { status: 500 });
+  const [transactions, total] = await Promise.all([
+    prisma.transaction.findMany({
+      where,
+      orderBy: { date: "desc" },
+      ...(paginated ? { skip: (page - 1) * limit, take: limit } : {}),
+    }),
+    prisma.transaction.count({ where }),
+  ]);
+
+  return NextResponse.json({
+    data: transactions,
+    total,
+    page: paginated ? page : 1,
+    limit: paginated ? limit : total,
+    totalPages: paginated ? Math.ceil(total / limit) : 1,
+  });
+}
+
+/**
+ * POST /api/transactions
+ * Body: { type, amount, category?, description?, date? }
+ *
+ * SRS-07 Add Transaction: Pengguna dapat menambahkan transaksi
+ * berupa pemasukan atau pengeluaran.
+ */
+export async function POST(req: NextRequest) {
+  const user = await getSessionUser(req);
+  if (!user) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
+
+  const body: TransactionInput = await req.json();
+
+  if (!body.type || !["income", "expense"].includes(body.type)) {
+    return NextResponse.json(
+      { message: "'type' wajib diisi (income atau expense)" },
+      { status: 400 }
+    );
+  }
+  if (typeof body.amount !== "number" || body.amount <= 0) {
+    return NextResponse.json(
+      { message: "'amount' wajib diisi dan harus lebih dari 0" },
+      { status: 400 }
+    );
+  }
+
+  const transaction = await prisma.transaction.create({
+    data: {
+      type: body.type,
+      amount: body.amount,
+      category: body.category,
+      description: body.description,
+      date: body.date ? new Date(body.date) : new Date(),
+      userId: user.id, // SRS-12
+    },
+  });
+
+  return NextResponse.json({ data: transaction }, { status: 201 });
 }

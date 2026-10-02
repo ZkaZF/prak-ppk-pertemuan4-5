@@ -1,4 +1,4 @@
-﻿# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
 /node_modules
@@ -40,7 +40,18 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# AI prompt and planning files
+# prisma - Programmer 2
+/app/generated/prisma
+generated/
+prisma/migrations/
+
+# AI tools - Programmer 2
+.agents/
+.claude/
+.windsurf/
+skills-lock.json
+
+# AI prompt and planning files - Programmer 1 & 3
 implementation_plan*.md
 implementation_results.md
 AGENTS.md
