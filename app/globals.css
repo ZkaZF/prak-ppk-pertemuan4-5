@@ -1,26 +1,250 @@
 @import "tailwindcss";
 
+/* ========================================
+   KO-FI DESIGN SYSTEM — TOKENS
+   Warm café chalkboard on cream paper
+   Based on design.md (Ko-fi style)
+   ======================================== */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Colors */
+  --color-oat-cream: #e9dfd2;
+  --color-morning-fog: #e5e7eb;
+  --color-ink-black: #202020;
+  --color-sticker-black: #000000;
+  --color-paper-white: #ffffff;
+  --color-kofi-blue: #aac9f7;
+  --color-cobalt-pop: #72a4f2;
+
+  /* Semantic tokens — light (only mode per design.md) */
+  --background: var(--color-morning-fog);
+  --foreground: var(--color-ink-black);
+  --card-bg: var(--color-paper-white);
+  --card-border: var(--color-sticker-black);
+  --text-primary: var(--color-ink-black);
+  --text-secondary: #5c5c5c;
+  --accent: var(--color-cobalt-pop);
+  --accent-surface: var(--color-kofi-blue);
+  --income-color: #2d7a4f;
+  --income-surface: #d4f0e0;
+  --expense-color: #b84040;
+  --expense-surface: #f9dada;
+  --oat: var(--color-oat-cream);
+
+  /* Typography */
+  --font-sans: Arial, Helvetica, sans-serif;
+  --font-display: "Arial Black", Arial, sans-serif;
+
+  /* Spacing */
+  --spacing-4: 4px;
+  --spacing-8: 8px;
+  --spacing-12: 12px;
+  --spacing-16: 16px;
+  --spacing-20: 20px;
+  --spacing-24: 24px;
+  --spacing-28: 28px;
+  --spacing-32: 32px;
+  --spacing-40: 40px;
+  --spacing-80: 80px;
+  --spacing-96: 96px;
+
+  /* Border Radius */
+  --radius-sm: 16px;
+  --radius-md: 24px;
+  --radius-card: 40px;
+  --radius-feature: 24px;
+  --radius-full: 9999px;
+
+  /* Card border — signature sticker black */
+  --border-sticker: 2px solid var(--color-sticker-black);
+
+  /* Layout */
+  --page-max-width: 1200px;
+  --header-height: 68px;
 }
 
+/* Dark mode */
+[data-theme="dark"] {
+  --background: #1a1814;
+  --foreground: #f0ece4;
+  --card-bg: #27231e;
+  --card-border: #4a4035;
+  --text-primary: #f0ece4;
+  --text-secondary: #a09080;
+  --accent: var(--color-cobalt-pop);
+  --accent-surface: #2a3d5c;
+  --income-color: #5ab87a;
+  --income-surface: rgba(90, 184, 122, 0.15);
+  --expense-color: #e07070;
+  --expense-surface: rgba(224, 112, 112, 0.15);
+  --oat: #302a22;
+}
+
+/* ── Tailwind v4 @theme integration ── */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card-bg: var(--card-bg);
+  --color-card-border: var(--card-border);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-accent: var(--accent);
+  --color-accent-surface: var(--accent-surface);
+  --color-income: var(--income-color);
+  --color-income-surface: var(--income-surface);
+  --color-expense: var(--expense-color);
+  --color-expense-surface: var(--expense-surface);
+  --color-oat: var(--oat);
+
+  /* Raw Ko-fi tokens exposed to Tailwind */
+  --color-oat-cream: #e9dfd2;
+  --color-morning-fog: #e5e7eb;
+  --color-ink-black: #202020;
+  --color-sticker-black: #000000;
+  --color-paper-white: #ffffff;
+  --color-kofi-blue: #aac9f7;
+  --color-cobalt-pop: #72a4f2;
+
+  --font-sans: var(--font-sans);
+  --font-display: var(--font-display);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* ========================================
+   BASE STYLES
+   ======================================== */
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
+
+/* All interactive elements — pointer cursor */
+button, [role="button"], a { cursor: pointer; }
+
+/* Focus ring — Ko-fi blue */
+:focus-visible {
+  outline: 2px solid var(--color-kofi-blue);
+  outline-offset: 2px;
+  border-radius: 999px;
+}
+
+/* Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── Pulse for live indicator ── */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+.animate-pulse { animation: pulse 2s ease-in-out infinite; }
+
+/* ========================================
+   KO-FI TYPOGRAPHY SCALE
+   ======================================== */
+
+/* Display — Bowlby One (bogue-black substitute) */
+.text-display {
+  font-family: var(--font-display);
+  font-size: 60px;
+  font-weight: 400;
+  line-height: 1;
+}
+.text-display-lg {
+  font-family: var(--font-display);
+  font-size: 72px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+/* DM Sans scale */
+.text-heading {
+  font-family: var(--font-sans);
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+.text-heading-sm {
+  font-family: var(--font-sans);
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.33;
+}
+.text-subheading {
+  font-family: var(--font-sans);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.text-body {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+.text-body-sm {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.43;
+}
+.text-caption {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.43;
+}
+.text-label-bold {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+/* Tabular numerals for financial data */
+.tabular-nums { font-variant-numeric: tabular-nums; }
+
+/* ========================================
+   KO-FI COMPONENT PRIMITIVES
+   Sticker card — white + 2px black border
+   ======================================== */
+
+.sticker-card {
+  background: var(--card-bg);
+  border: 2px solid var(--card-border);
+  border-radius: var(--radius-card);     /* 40px */
+  transition: border-color 0.15s ease;
+}
+
+.feature-card {
+  background: var(--oat);
+  border-radius: var(--radius-feature);  /* 24px */
+}
+
+/* Pill button base */
+.pill-btn {
+  border-radius: var(--radius-full);
+  padding: 12px 24px;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 600;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+.pill-btn:hover { transform: translateY(-1px); }
+.pill-btn:active { transform: translateY(0); }
