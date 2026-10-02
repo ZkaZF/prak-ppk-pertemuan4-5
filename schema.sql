@@ -22,3 +22,14 @@ CREATE TABLE IF NOT EXISTS transactions (
 CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id);
 
 SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';
+-- Tabel budget bulanan per user (SRS-27)
+CREATE TABLE IF NOT EXISTS budgets (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  month DATE NOT NULL,
+  amount NUMERIC(14,2) NOT NULL CHECK (amount > 0),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(user_id, month)
+);
+
+CREATE INDEX IF NOT EXISTS idx_budgets_user_month ON budgets(user_id, month);
