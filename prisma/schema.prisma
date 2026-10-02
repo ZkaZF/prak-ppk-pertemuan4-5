@@ -1,0 +1,35 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+model User {
+  id           String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name         String        @db.VarChar(255)
+  email        String        @unique @db.VarChar(255)
+  passwordHash String        @map("password_hash")
+  createdAt    DateTime      @default(now()) @db.Timestamptz(6) @map("created_at")
+  transactions Transaction[]
+
+  @@map("users")
+}
+
+model Transaction {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  type        String   @db.VarChar(20)
+  amount      Decimal  @db.Decimal(14, 2)
+  category    String?  @db.VarChar(100)
+  description String?
+  date        DateTime @default(dbgenerated("CURRENT_DATE")) @map("transaction_date") @db.Date
+  createdAt   DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([userId], map: "idx_transactions_user_id")
+  @@map("transactions")
+}
