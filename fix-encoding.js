@@ -1,4 +1,5 @@
-// ============================================
+﻿const fs = require("fs");
+const content = `// ============================================
 // Financial Calculations — SRS-17
 // Saldo = Total Pemasukan - Total Pengeluaran
 // ============================================
@@ -114,3 +115,5 @@ export function formatMonth(monthStr: string): string {
   return new Intl.DateTimeFormat("id-ID", { month: "long", year: "numeric" })
     .format(new Date(year, month - 1, 1));
 }
+`;
+fs.writeFileSync("app/lib/calculations.ts", Buffer.from(content, "utf-8"));

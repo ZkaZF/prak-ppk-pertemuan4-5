@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 /* ========================================
-   KO-FI DESIGN SYSTEM — TOKENS
-   Warm café chalkboard on cream paper
+   KO-FI DESIGN SYSTEM â€” TOKENS
+   Warm cafÃ© chalkboard on cream paper
    Based on design.md (Ko-fi style)
    ======================================== */
 
@@ -16,7 +16,7 @@
   --color-kofi-blue: #aac9f7;
   --color-cobalt-pop: #72a4f2;
 
-  /* Semantic tokens — light (only mode per design.md) */
+  /* Semantic tokens â€” light (only mode per design.md) */
   --background: var(--color-morning-fog);
   --foreground: var(--color-ink-black);
   --card-bg: var(--color-paper-white);
@@ -29,6 +29,8 @@
   --income-surface: #d4f0e0;
   --expense-color: #b84040;
   --expense-surface: #f9dada;
+  --color-warning: #b45309;
+  --color-danger: #c2410c;
   --oat: var(--color-oat-cream);
 
   /* Typography */
@@ -55,7 +57,7 @@
   --radius-feature: 24px;
   --radius-full: 9999px;
 
-  /* Card border — signature sticker black */
+  /* Card border â€” signature sticker black */
   --border-sticker: 2px solid var(--color-sticker-black);
 
   /* Layout */
@@ -80,7 +82,7 @@
   --oat: #302a22;
 }
 
-/* ── Tailwind v4 @theme integration ── */
+/* â”€â”€ Tailwind v4 @theme integration â”€â”€ */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -129,10 +131,10 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* All interactive elements — pointer cursor */
+/* All interactive elements â€” pointer cursor */
 button, [role="button"], a { cursor: pointer; }
 
-/* Focus ring — Ko-fi blue */
+/* Focus ring â€” Ko-fi blue */
 :focus-visible {
   outline: 2px solid var(--color-kofi-blue);
   outline-offset: 2px;
@@ -148,7 +150,7 @@ button, [role="button"], a { cursor: pointer; }
   }
 }
 
-/* ── Pulse for live indicator ── */
+/* â”€â”€ Pulse for live indicator â”€â”€ */
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.3; }
@@ -159,7 +161,7 @@ button, [role="button"], a { cursor: pointer; }
    KO-FI TYPOGRAPHY SCALE
    ======================================== */
 
-/* Display — Bowlby One (bogue-black substitute) */
+/* Display â€” Bowlby One (bogue-black substitute) */
 .text-display {
   font-family: var(--font-display);
   font-size: 60px;
@@ -222,7 +224,7 @@ button, [role="button"], a { cursor: pointer; }
 
 /* ========================================
    KO-FI COMPONENT PRIMITIVES
-   Sticker card — white + 2px black border
+   Sticker card â€” white + 2px black border
    ======================================== */
 
 .sticker-card {
