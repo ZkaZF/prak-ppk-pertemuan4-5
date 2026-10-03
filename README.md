@@ -16,6 +16,10 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Budget bulanan
+
+Fitur budget menggunakan tabel PostgreSQL `budgets` dengan kolom `user_id`, `month`, `amount`, dan `created_at`. Tabel harus memiliki constraint unik pada `(user_id, month)` agar budget per bulan dapat dibuat atau diubah. Pada dashboard, pilih bulan lalu simpan atau ubah batas pengeluaran; budget dan total pengeluaran bulan tersebut dimuat dan disimpan melalui endpoint API tanpa reload halaman.
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
